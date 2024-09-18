@@ -1,125 +1,272 @@
 import 'package:flutter/material.dart';
 
-void main() {
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  // This widget is the root of your application.
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
+void main() => runApp(
+      const MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: XOGame(),
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
     );
-  }
-}
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class XOGame extends StatefulWidget {
+  const XOGame({Key? key}) : super(key: key);
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  _XOGameState createState() => _XOGameState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
+class _XOGameState extends State<XOGame> {
+  List<String> board = List.generate(9, (_) => '');
+  bool isXTurn = true;
+  String winner = '';
+  int xScore = 0;
+  int oScore = 0;
+  bool gameOver = false;
+  String playerX = 'Player X';
+  String playerO = 'Player O';
+  bool isEditingX = false;
+  bool isEditingO = false;
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+        title: const Text("XO-Assessment"),
+        centerTitle: true,
+        backgroundColor: Colors.deepPurpleAccent,
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
         child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
+          children: [
+            _buildPlayerEditSection(),
+            const SizedBox(height: 20),
+            _buildTurnDisplay(),
+            const SizedBox(height: 20),
+            _buildScoreBoard(),
+            const SizedBox(height: 20),
+            Expanded(child: _buildBoard()),
+            const SizedBox(height: 20),
+            _buildRestartButton(),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+    );
+  }
+
+  // Display current player turn
+  Widget _buildTurnDisplay() {
+    String currentPlayer = isXTurn ? playerX : playerO;
+    return Text(
+      '$currentPlayer\'s Turn',
+      style: const TextStyle(
+          fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
+    );
+  }
+
+  Widget _buildPlayerEditSection() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        _buildPlayerName('X'),
+        _buildPlayerName('O'),
+      ],
+    );
+  }
+
+  Widget _buildPlayerName(String player) {
+    bool isEditing = player == 'X' ? isEditingX : isEditingO;
+    String playerName = player == 'X' ? playerX : playerO;
+    return Column(
+      children: [
+        isEditing
+            ? SizedBox(
+                width: 100,
+                child: TextField(
+                  onChanged: (value) {
+                    setState(() {
+                      if (player == 'X') {
+                        playerX = value.isNotEmpty ? value : 'Player X';
+                      } else {
+                        playerO = value.isNotEmpty ? value : 'Player O';
+                      }
+                    });
+                  },
+                  decoration: InputDecoration(
+                    labelText: player == 'X' ? 'Player X' : 'Player O',
+                    filled: true,
+                    fillColor: Colors.white12,
+                  ),
+                  style: const TextStyle(color: Colors.white),
+                ),
+              )
+            : Text(
+                playerName,
+                style:
+                    const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+        IconButton(
+          icon: Icon(isEditing ? Icons.check : Icons.edit, color: Colors.black),
+          onPressed: () {
+            setState(() {
+              if (player == 'X') {
+                isEditingX = !isEditingX;
+              } else {
+                isEditingO = !isEditingO;
+              }
+            });
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildScoreBoard() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        _buildScoreTile(playerX, xScore),
+        _buildScoreTile(playerO, oScore),
+      ],
+    );
+  }
+
+  Widget _buildScoreTile(String player, int score) {
+    return Column(
+      children: [
+        Text(
+          '$player',
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
+        ),
+        const SizedBox(height: 10),
+        Text(
+          '$score',
+          style: const TextStyle(fontSize: 32, color: Colors.deepPurpleAccent),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBoard() {
+    return GridView.builder(
+      shrinkWrap: true,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        mainAxisSpacing: 10,
+        crossAxisSpacing: 10,
+      ),
+      itemCount: 9,
+      itemBuilder: (context, index) {
+        return GestureDetector(
+          onTap: () => _onTileTap(index),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.deepPurpleAccent,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Center(
+              child: Text(
+                board[index],
+                style: TextStyle(
+                  fontSize: 48,
+                  color: board[index] == 'X' ? Colors.blue : Colors.pink,
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _onTileTap(int index) {
+    if (board[index].isEmpty && winner.isEmpty && !gameOver) {
+      setState(() {
+        board[index] = isXTurn ? 'X' : 'O';
+        isXTurn = !isXTurn;
+        _checkWinner();
+      });
+    }
+  }
+
+  void _checkWinner() {
+    const List<List<int>> winConditions = [
+      [0, 1, 2], [3, 4, 5], [6, 7, 8], // Horizontal
+      [0, 3, 6], [1, 4, 7], [2, 5, 8], // Vertical
+      [0, 4, 8], [2, 4, 6] // Diagonal
+    ];
+
+    for (var condition in winConditions) {
+      String a = board[condition[0]];
+      String b = board[condition[1]];
+      String c = board[condition[2]];
+      if (a == b && b == c && a.isNotEmpty) {
+        setState(() {
+          winner = a;
+          gameOver = true;
+          _showWinnerDialog(a == 'X' ? playerX : playerO);
+          if (a == 'X') {
+            xScore++;
+          } else {
+            oScore++;
+          }
+        });
+        return;
+      }
+    }
+
+    if (!board.contains('') && winner.isEmpty) {
+      setState(() {
+        winner = 'Draw';
+        gameOver = true;
+        _showWinnerDialog('Draw');
+      });
+    }
+  }
+
+  void _resetBoard() {
+    setState(() {
+      board = List.generate(9, (_) => '');
+      winner = '';
+      gameOver = false;
+      isXTurn = true;
+    });
+  }
+
+  void _showWinnerDialog(String winnerName) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(winner == 'Draw' ? 'It\'s a Draw!' : '$winnerName Wins!'),
+        content: Text(winner == 'Draw'
+            ? 'Try again to find a winner.'
+            : '$winnerName has won the game!'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _resetBoard();
+            },
+            child: const Text('Play Again'),
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRestartButton() {
+    return ElevatedButton(
+      onPressed: _resetBoard,
+      style: ElevatedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        backgroundColor: Colors.deepPurpleAccent,
+      ),
+      child: const Text(
+        "Restart Game",
+        style: TextStyle(color: Colors.white),
+      ),
     );
   }
 }
