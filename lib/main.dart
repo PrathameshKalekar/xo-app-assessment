@@ -96,7 +96,7 @@ class _XOGameState extends State<XOGame> {
                     filled: true,
                     fillColor: Colors.white12,
                   ),
-                  style: const TextStyle(color: Colors.white),
+                  style: const TextStyle(color: Colors.black),
                 ),
               )
             : Text(
